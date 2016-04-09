@@ -15,23 +15,32 @@ class QJSTP
 
 public:
 
-    static QScriptValue parse (QString str);
-    static QString stringify (QScriptValue obj);
+    static QJSTP* initialize();
 
-    static QString dump (QScriptValue obj);
+    QScriptValue parse (QString str);
+    QString stringify (QScriptValue obj);
 
-    static QScriptValue interprete (QString str);
-    static QString serialize (QScriptValue obj);
+    QString dump (QScriptValue obj);
 
-    static QScriptValue deserialize (QString str);
+    QScriptValue interprete (QString str);
+    QString serialize (QScriptValue obj);
 
-    static QScriptValue dataToObject (QScriptValue data, QScriptValue metadata);
-    static QScriptValue objectToData (QScriptValue obj, QScriptValue metadata);
+    QScriptValue deserialize (QString str);
+
+    QScriptValue dataToObject (QScriptValue data, QScriptValue metadata);
+    QScriptValue objectToData (QScriptValue obj, QScriptValue metadata);
 
 private:
 
-    static QScriptEngine engine;
+    static QJSTP* qjstp;
 
+    QCoreApplication* qCoreApplication;
+    QScriptEngine* engine;
+
+    QJSTP();
+
+    QString stringifyObj (QScriptValue obj);
+    QString stringifyArr (QScriptValue obj);
 };
 
 
