@@ -32,6 +32,10 @@ public:
 
 private:
 
+    enum Type {
+        UNDEFINED, NUL, BOOL, NUMBER, STRING, ARRAY, OBJECT, ERROR, FUNCTION
+    };
+
     static QJSTP* qjstp;
 
     QCoreApplication* qCoreApplication;
@@ -39,8 +43,22 @@ private:
 
     QJSTP();
 
+    QScriptValue parse (QString& str, uint &beg);
+
+    QScriptValue parseUndefined (QString& str, uint &beg);
+    QScriptValue parseNull (QString& str, uint &beg);
+    QScriptValue parseBool (QString& str, uint &beg);
+    QScriptValue parseNumber (QString& str, uint &beg);
+    QScriptValue parseString (QString& str, uint &beg);
+    QScriptValue parseArray (QString& str, uint &beg);
+    QScriptValue parseObject (QString& str, uint &beg);
+    QScriptValue parseError (QString& str, uint &beg);
+
+    Type typeOf (QString& str, uint &beg);
+
     QString stringifyObj (QScriptValue obj);
     QString stringifyArr (QScriptValue obj);
+
 };
 
 

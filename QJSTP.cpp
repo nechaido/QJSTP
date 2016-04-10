@@ -11,7 +11,8 @@ QJSTP* QJSTP::qjstp;
 
 QScriptValue QJSTP::parse(QString str)
 {
-
+    uint beg = 0;
+    return parse(str, beg);
 }
 
 QString QJSTP::stringify(QScriptValue obj)
@@ -67,6 +68,83 @@ QJSTP::QJSTP()
     engine = new QScriptEngine();
 }
 
+QScriptValue QJSTP::parse(QString &str, uint &beg){
+    Type type;
+    while (str[beg].isSpace()) { ++beg; }
+    type = typeOf(str, beg);
+    switch (type) {
+        case UNDEFINED: return parseUndefined(str, beg);
+        case NUL      : return parseNull(str, beg);
+        case BOOL     : return parseBool(str, beg);
+        case NUMBER   : return parseNumber(str, beg);
+        case STRING   : return parseString(str, beg);
+        case OBJECT   : return parseObject(str, beg);
+        case ARRAY    : return parseArray(str, beg);
+        case ERROR    : return parseError(str, beg);
+    }
+}
+
+QScriptValue QJSTP::parseUndefined(QString &str, uint &beg)
+{
+
+}
+
+QScriptValue QJSTP::parseNull(QString &str, uint &beg)
+{
+
+}
+
+QScriptValue QJSTP::parseBool(QString &str, uint &beg)
+{
+
+}
+
+QScriptValue QJSTP::parseNumber(QString &str, uint &beg)
+{
+
+}
+
+QScriptValue QJSTP::parseString(QString &str, uint &beg)
+{
+
+}
+
+QScriptValue QJSTP::parseArray(QString &str, uint &beg)
+{
+
+}
+
+QScriptValue QJSTP::parseObject(QString &str, uint &beg)
+{
+
+}
+
+QScriptValue QJSTP::parseError(QString &str, uint &beg)
+{
+
+}
+
+QJSTP::Type QJSTP::typeOf(QString &str, uint &beg)
+{
+    if (str[beg] == ',' || str[beg] == ']' || str[beg] == 'u')
+        return UNDEFINED;
+    if (str[beg] == 'n')
+        return NUL;
+    if (str[beg].isDigit() || str[beg] == '.' || str[beg] == '-' || str[beg] == '+')
+        return NUMBER;
+    if (str[beg] == 'f' && str[beg+1] == 'u')
+        return FUNCTION;
+    if ((str[beg] == 'f' && str[beg+1] == 'a') || str[beg] == 't')
+        return BOOL;
+    if (str[beg] == '\"' || str[beg] == '\'')
+        return STRING;
+    if (str[beg] == '[')
+        return ARRAY;
+    if (str[beg] == '{')
+        return OBJECT;
+    return ERROR;
+}
+
 QString QJSTP::stringifyObj(QScriptValue obj)
 {
     QString str;
@@ -74,34 +152,31 @@ QString QJSTP::stringifyObj(QScriptValue obj)
     str = "{";
     if (current.hasNext()){
         current.next();
-        str.append(current.name() + ":" + stringify(current.value()));
+        str += (current.name() + ":" + stringify(current.value()));
     }
     while (current.hasNext()){
         current.next();
-        str.append(",");
-        str.append(current.name());
-        str.append(":");
-        str.append(stringify(current.value()));
+        str += "," + current.name() + ":" + stringify(current.value());
     }
-    str.append("}");
+    str += "}";
     return str;
 }
 
 QString QJSTP::stringifyArr(QScriptValue obj)
 {
     QString str;
-    QScriptValueIterator current(obj);
     str = "[";
-    if (current.hasNext()){
-        current.next();
-        str.append(stringify(current.value()));
+    if (obj.property("length").toNumber() != 0){
+        str += stringify(obj.property(0));
     }
-    while (current.hasNext()){
-        current.next();
-        str.append(",");
-        str.append(stringify(current.value()));
+    for (int i = 1; i < obj.property("length").toNumber(); ++i){
+        QScriptValue current = obj.property(i);
+        str += ",";
+        if(!current.isUndefined()){
+            str += stringify(current);
+        }
     }
-    str.append("]");
+    str += "]";
     return str;
 }
 
