@@ -72,6 +72,8 @@ private:
     QString stringifyObj (QScriptValue obj);
     QString stringifyArr (QScriptValue obj);
 
+    void postprocess(QScriptValue);
+
 };
 
 

@@ -5,8 +5,6 @@
 #include "QJSTP.h"
 #include <QScriptValueIterator>
 
-#include <iostream>
-
 QJSTP* QJSTP::qjstp;
 
 QScriptValue QJSTP::parse(QString str)
@@ -34,7 +32,9 @@ QString QJSTP::dump(QScriptValue obj)
 
 QScriptValue QJSTP::interprete(QString str)
 {
-    return engine->evaluate("(" + str + ")");
+    QScriptValue result = engine->evaluate("(" + str + ")");
+    postprocess(result);
+    return result;
 }
 
 QString QJSTP::serialize(QScriptValue obj)
@@ -72,7 +72,7 @@ QJSTP::QJSTP()
 QScriptValue QJSTP::parseUndefined(QString &str, uint &beg)
 {
     if (str[beg] == ',' || str[beg] == ']'){
-        return QScriptValue(QScriptValue::UndefinedValue);
+        return QScriptValue::UndefinedValue;
     }
     if (str.mid(beg, 9) == "undefined"){
         beg += 9;
@@ -85,7 +85,7 @@ QScriptValue QJSTP::parseNull(QString &str, uint &beg)
 {
     if (str.mid(beg, 4) == "null"){
         beg += 4;
-        return QScriptValue(QScriptValue::NullValue);
+        return QScriptValue::NullValue;
     }
     return parseError(str, beg);
 }
@@ -116,9 +116,6 @@ QScriptValue QJSTP::parseNumber(QString &str, uint &beg)
     }
     if (size > 0){
         beg += size;
-//        QString s = str.mid(beg - size, size);
-//        double d = s.toDouble();
-//        QScriptValue qScriptValue = QScriptValue(d);
         return QScriptValue(str.mid(beg - size, size).toDouble());
     }
     return parseError(str, beg);
@@ -260,6 +257,24 @@ QString QJSTP::stringifyArr(QScriptValue obj)
     str += "]";
     return str;
 }
+void QJSTP::postprocess(QScriptValue value)
+{
+    if (value.isObject()){
+        QScriptValueIterator current(value);
+        if (current.hasNext()) {
+            current.next();
+            postprocess(current.value());
+        }
+    } else if (value.isArray()){
+        for (int i = 1; i < value.property("length").toNumber(); ++i){
+            if (!value.property(i).isValid()){
+                value.setProperty(i, QScriptValue::UndefinedValue);
+            }
+        }
+    }
+}
+
+
 
 
 
