@@ -33,7 +33,7 @@ public:
 private:
 
     enum Type {
-        UNDEFINED, NUL, BOOL, NUMBER, STRING, ARRAY, OBJECT, ERROR, FUNCTION
+        UNDEFINED = 0, NUL, BOOL, NUMBER, STRING, ARRAY, OBJECT, ERROR, FUNCTION
     };
 
     static QJSTP* qjstp;
@@ -41,9 +41,19 @@ private:
     QCoreApplication* qCoreApplication;
     QScriptEngine* engine;
 
-    QJSTP();
+    QScriptValue(QJSTP::*parser[9])(QString&, uint&) = {
+        &QJSTP::parseUndefined,
+        &QJSTP::parseBool,
+        &QJSTP::parseNull,
+        &QJSTP::parseNumber,
+        &QJSTP::parseString,
+        &QJSTP::parseArray,
+        &QJSTP::parseObject,
+        &QJSTP::parseError,
+        &QJSTP::parseFunction
+    };
 
-    QScriptValue parse (QString& str, uint &beg);
+    QJSTP();
 
     QScriptValue parseUndefined (QString& str, uint &beg);
     QScriptValue parseNull (QString& str, uint &beg);
@@ -53,8 +63,11 @@ private:
     QScriptValue parseArray (QString& str, uint &beg);
     QScriptValue parseObject (QString& str, uint &beg);
     QScriptValue parseError (QString& str, uint &beg);
+    QScriptValue parseFunction (QString& str, uint &beg);
 
-    Type typeOf (QString& str, uint &beg);
+    inline Type typeOf (QString& str, uint &beg);
+    inline void skipWhitespaces(QString& str, uint &beg);
+    inline QString getTokenName(QString& str, uint &beg);
 
     QString stringifyObj (QScriptValue obj);
     QString stringifyArr (QScriptValue obj);
