@@ -5,8 +5,9 @@
 
 int i = 0;
 
-QCoreApplication* qCoreApplication = new QCoreApplication(i, nullptr);
-QScriptEngine* engine = new QScriptEngine();
+QCoreApplication *qCoreApplication = new QCoreApplication(i, nullptr);
+
+QScriptEngine *engine = new QScriptEngine();
 
 namespace QJSTP
 {
@@ -22,11 +23,13 @@ QScriptValue parse(QString str)
 
 QString stringify(QScriptValue obj)
 {
-    if (obj.isArray()){
+    if (obj.isArray()) {
         return stringifyArr(obj);
-    } else if (obj.isObject()) {
+    }
+    else if (obj.isObject()) {
         return stringifyObj(obj);
-    } else {
+    }
+    else {
         return obj.toString();
     }
 }
@@ -65,10 +68,10 @@ QScriptValue objectToData(QScriptValue obj, QScriptValue metadata)
 
 QScriptValue parseUndefined(QString &str, uint &beg)
 {
-    if (str[beg] == ',' || str[beg] == ']'){
+    if (str[beg] == ',' || str[beg] == ']') {
         return QScriptValue::UndefinedValue;
     }
-    if (str.mid(beg, 9) == "undefined"){
+    if (str.mid(beg, 9) == "undefined") {
         beg += 9;
         return QScriptValue(QScriptValue::UndefinedValue);
     }
@@ -77,7 +80,7 @@ QScriptValue parseUndefined(QString &str, uint &beg)
 
 QScriptValue parseNull(QString &str, uint &beg)
 {
-    if (str.mid(beg, 4) == "null"){
+    if (str.mid(beg, 4) == "null") {
         beg += 4;
         return QScriptValue::NullValue;
     }
@@ -86,11 +89,11 @@ QScriptValue parseNull(QString &str, uint &beg)
 
 QScriptValue parseBool(QString &str, uint &beg)
 {
-    if (str.mid(beg, 4) == "true"){
+    if (str.mid(beg, 4) == "true") {
         beg += 4;
         return QScriptValue(true);
     }
-    if (str.mid(beg, 5) == "false"){
+    if (str.mid(beg, 5) == "false") {
         beg += 5;
         return QScriptValue(false);
     }
@@ -102,13 +105,20 @@ QScriptValue parseNumber(QString &str, uint &beg)
     uint size = 0;
     bool isIntPart = true;
     if (str[beg] == '+' || str[beg] == '-') ++size;
-    while (!str[beg + size].isSpace() && size < str.length() - beg && str[beg + size] != ','){
-        if (str[beg + size].isNumber()) { ++size; continue; }
-        if (str[beg + size] == '.' && isIntPart) { isIntPart = false; ++size; continue; }
+    while (!str[beg + size].isSpace() && size < str.length() - beg && str[beg + size] != ',') {
+        if (str[beg + size].isNumber()) {
+            ++size;
+            continue;
+        }
+        if (str[beg + size] == '.' && isIntPart) {
+            isIntPart = false;
+            ++size;
+            continue;
+        }
         size = -1;
         break;
     }
-    if (size > 0){
+    if (size > 0) {
         beg += size;
         return QScriptValue(str.mid(beg - size, size).toDouble());
     }
@@ -120,12 +130,15 @@ QScriptValue parseString(QString &str, uint &beg)
     uint size = 1;
     QCharRef begSymbol = str[beg];
     ++beg;
-    while (true){
-        if (size == str.length() - beg) { size = -1; break; }
-        if (str[beg+size] == begSymbol && str[beg+size-1] != '\\') { break; }
+    while (true) {
+        if (size == str.length() - beg) {
+            size = -1;
+            break;
+        }
+        if (str[beg + size] == begSymbol && str[beg + size - 1] != '\\') { break; }
         ++size;
     }
-    if (size > 0){
+    if (size > 0) {
         beg += size + 1;
         return QScriptValue(str.mid(beg - size - 1, size));
     }
@@ -137,8 +150,8 @@ QScriptValue parseArray(QString &str, uint &beg)
     QScriptValue result = engine->newArray();
     skipWhitespaces(str, beg);
     quint32 index = 0;
-    while (beg < str.length()){
-        if (str[beg] == ']'){
+    while (beg < str.length()) {
+        if (str[beg] == ']') {
             ++beg;
             return result;
         }
@@ -154,11 +167,12 @@ QScriptValue parseObject(QString &str, uint &beg)
 {
     QScriptValue result = engine->newObject();
     skipWhitespaces(str, beg);
-    while (beg < str.length()){
-        if (str[beg] == '}'){
+    while (beg < str.length()) {
+        if (str[beg] == '}') {
             ++beg;
             return result;
-        } else {
+        }
+        else {
             ++beg;
             skipWhitespaces(str, beg);
         }
@@ -188,9 +202,9 @@ Type typeOf(QString &str, uint &beg)
         return NUL;
     if (str[beg].isDigit() || str[beg] == '.' || str[beg] == '-' || str[beg] == '+')
         return NUMBER;
-    if (str[beg] == 'f' && str[beg+1] == 'u')
+    if (str[beg] == 'f' && str[beg + 1] == 'u')
         return FUNCTION;
-    if ((str[beg] == 'f' && str[beg+1] == 'a') || str[beg] == 't')
+    if ((str[beg] == 'f' && str[beg + 1] == 'a') || str[beg] == 't')
         return BOOL;
     if (str[beg] == '\"' || str[beg] == '\'')
         return STRING;
@@ -201,7 +215,8 @@ Type typeOf(QString &str, uint &beg)
     return ERROR;
 }
 
-void skipWhitespaces(QString& str, uint &beg){
+void skipWhitespaces(QString &str, uint &beg)
+{
     while (str[beg].isSpace()) { ++beg; }
 }
 
@@ -209,7 +224,7 @@ QString getTokenName(QString &str, uint &beg)
 {
     skipWhitespaces(str, beg);
     uint size = 0;
-    for (size = 0; size < str.length() - beg && !str[beg+size].isSpace() && str[beg+size] != ':'; ++size);
+    for (size = 0; size < str.length() - beg && !str[beg + size].isSpace() && str[beg + size] != ':'; ++size);
     uint tmp = beg;
     beg += size;
     skipWhitespaces(str, beg);
@@ -222,11 +237,11 @@ QString stringifyObj(QScriptValue obj)
     QString str;
     QScriptValueIterator current(obj);
     str = "{";
-    if (current.hasNext()){
+    if (current.hasNext()) {
         current.next();
         str += (current.name() + ":" + stringify(current.value()));
     }
-    while (current.hasNext()){
+    while (current.hasNext()) {
         current.next();
         str += "," + current.name() + ":" + stringify(current.value());
     }
@@ -238,13 +253,13 @@ QString stringifyArr(QScriptValue obj)
 {
     QString str;
     str = "[";
-    if (obj.property("length").toNumber() != 0){
+    if (obj.property("length").toNumber() != 0) {
         str += stringify(obj.property(0));
     }
-    for (int i = 1; i < obj.property("length").toNumber(); ++i){
+    for (int i = 1; i < obj.property("length").toNumber(); ++i) {
         QScriptValue current = obj.property(i);
         str += ",";
-        if(!current.isUndefined()){
+        if (!current.isUndefined()) {
             str += stringify(current);
         }
     }
@@ -253,15 +268,16 @@ QString stringifyArr(QScriptValue obj)
 }
 void postprocess(QScriptValue value)
 {
-    if (value.isObject()){
+    if (value.isObject()) {
         QScriptValueIterator current(value);
         if (current.hasNext()) {
             current.next();
             postprocess(current.value());
         }
-    } else if (value.isArray()){
-        for (int i = 1; i < value.property("length").toNumber(); ++i){
-            if (!value.property(i).isValid()){
+    }
+    else if (value.isArray()) {
+        for (int i = 1; i < value.property("length").toNumber(); ++i) {
+            if (!value.property(i).isValid()) {
                 value.setProperty(i, QScriptValue::UndefinedValue);
             }
         }
