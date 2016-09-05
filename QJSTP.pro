@@ -6,9 +6,9 @@ TARGET = QJSTP
 TEMPLATE = lib
 CONFIG += staticlib
 
-SOURCES += QJSTP.cpp
+SOURCES += parser.cpp
 
-HEADERS += QJSTP.h
+HEADERS += parser.h
 
 unix {
     target.path = /usr/lib
