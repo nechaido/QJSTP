@@ -1,21 +1,18 @@
-//
-// Created by nechaido on 4/9/16.
-//
-
-#ifndef QJSTP_QJSTP_H
-#define QJSTP_QJSTP_H
-
 #include <QtCore>
 #include <QScriptEngine>
 #include <QScriptValue>
 
+#ifndef PARSER_H
+#define PARSER_H
 
-class QJSTP
+namespace QJSTP {
+
+class Parser
 {
 
 public:
 
-    static QJSTP* initialize();
+    static Parser* initialize();
 
     QScriptValue parse (QString str);
     QString stringify (QScriptValue obj);
@@ -32,28 +29,28 @@ public:
 
 private:
 
+    static Parser* self;
+
     enum Type {
         UNDEFINED = 0, NUL, BOOL, NUMBER, STRING, ARRAY, OBJECT, ERROR, FUNCTION
     };
 
-    static QJSTP* qjstp;
-
     QCoreApplication* qCoreApplication;
     QScriptEngine* engine;
 
-    QScriptValue(QJSTP::*parser[9])(QString&, uint&) = {
-        &QJSTP::parseUndefined,
-        &QJSTP::parseBool,
-        &QJSTP::parseNull,
-        &QJSTP::parseNumber,
-        &QJSTP::parseString,
-        &QJSTP::parseArray,
-        &QJSTP::parseObject,
-        &QJSTP::parseError,
-        &QJSTP::parseFunction
+    QScriptValue(Parser::*parser[9])(QString&, uint&) = {
+        &Parser::parseUndefined,
+        &Parser::parseBool,
+        &Parser::parseNull,
+        &Parser::parseNumber,
+        &Parser::parseString,
+        &Parser::parseArray,
+        &Parser::parseObject,
+        &Parser::parseError,
+        &Parser::parseFunction
     };
 
-    QJSTP();
+    Parser();
 
     QScriptValue parseUndefined (QString& str, uint &beg);
     QScriptValue parseNull (QString& str, uint &beg);
@@ -65,16 +62,16 @@ private:
     QScriptValue parseError (QString& str, uint &beg);
     QScriptValue parseFunction (QString& str, uint &beg);
 
-    inline Type typeOf (QString& str, uint &beg);
-    inline void skipWhitespaces(QString& str, uint &beg);
-    inline QString getTokenName(QString& str, uint &beg);
+    Type typeOf (QString& str, uint &beg);
+    void skipWhitespaces(QString& str, uint &beg);
+    QString getTokenName(QString& str, uint &beg);
 
     QString stringifyObj (QScriptValue obj);
     QString stringifyArr (QScriptValue obj);
 
     void postprocess(QScriptValue);
-
 };
 
+}
 
-#endif //QJSTP_QJSTP_H
+#endif // PARSER_H
