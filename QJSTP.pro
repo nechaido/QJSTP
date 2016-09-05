@@ -8,7 +8,8 @@ CONFIG += staticlib
 
 SOURCES += parser.cpp
 
-HEADERS += parser.h
+HEADERS += parser.h \
+    _parser.h
 
 unix {
     target.path = /usr/lib

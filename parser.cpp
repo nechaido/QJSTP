@@ -1,18 +1,26 @@
 #include "parser.h"
+#include "_parser.h"
+
 #include <QScriptValueIterator>
 
-using namespace QJSTP;
+int i = 0;
 
-Parser* Parser::self;
+QCoreApplication* qCoreApplication = new QCoreApplication(i, nullptr);
+QScriptEngine* engine = new QScriptEngine();
 
-QScriptValue Parser::parse(QString str)
+namespace QJSTP
+{
+namespace Parser
+{
+
+QScriptValue parse(QString str)
 {
     uint beg = 0;
     skipWhitespaces(str, beg);
-    return (this->*parser[typeOf(str, beg)])(str, beg);
+    return parser[typeOf(str, beg)](str, beg);
 }
 
-QString Parser::stringify(QScriptValue obj)
+QString stringify(QScriptValue obj)
 {
     if (obj.isArray()){
         return stringifyArr(obj);
@@ -23,51 +31,39 @@ QString Parser::stringify(QScriptValue obj)
     }
 }
 
-QString Parser::dump(QScriptValue obj)
+QString dump(QScriptValue obj)
 {
 
 }
 
-QScriptValue Parser::interprete(QString str)
+QScriptValue interprete(QString str)
 {
     QScriptValue result = engine->evaluate("(" + str + ")");
     postprocess(result);
     return result;
 }
 
-QString Parser::serialize(QScriptValue obj)
+QString serialize(QScriptValue obj)
 {
 
 }
 
-QScriptValue Parser::deserialize(QString str)
+QScriptValue deserialize(QString str)
 {
 
 }
 
-QScriptValue Parser::dataToObject(QScriptValue data, QScriptValue metadata)
+QScriptValue dataToObject(QScriptValue data, QScriptValue metadata)
 {
 
 }
 
-QScriptValue Parser::objectToData(QScriptValue obj, QScriptValue metadata)
+QScriptValue objectToData(QScriptValue obj, QScriptValue metadata)
 {
 
 }
 
-Parser *Parser::initialize()
-{
-    return self != nullptr ? self : (self = new Parser());
-}
-
-Parser::Parser()
-{
-    int i = 0;
-    qCoreApplication = new QCoreApplication(i, nullptr);
-    engine = new QScriptEngine();
-}
-
-QScriptValue Parser::parseUndefined(QString &str, uint &beg)
+QScriptValue parseUndefined(QString &str, uint &beg)
 {
     if (str[beg] == ',' || str[beg] == ']'){
         return QScriptValue::UndefinedValue;
@@ -79,7 +75,7 @@ QScriptValue Parser::parseUndefined(QString &str, uint &beg)
     return parseError(str, beg);
 }
 
-QScriptValue Parser::parseNull(QString &str, uint &beg)
+QScriptValue parseNull(QString &str, uint &beg)
 {
     if (str.mid(beg, 4) == "null"){
         beg += 4;
@@ -88,7 +84,7 @@ QScriptValue Parser::parseNull(QString &str, uint &beg)
     return parseError(str, beg);
 }
 
-QScriptValue Parser::parseBool(QString &str, uint &beg)
+QScriptValue parseBool(QString &str, uint &beg)
 {
     if (str.mid(beg, 4) == "true"){
         beg += 4;
@@ -101,7 +97,7 @@ QScriptValue Parser::parseBool(QString &str, uint &beg)
     return parseError(str, beg);
 }
 
-QScriptValue Parser::parseNumber(QString &str, uint &beg)
+QScriptValue parseNumber(QString &str, uint &beg)
 {
     uint size = 0;
     bool isIntPart = true;
@@ -119,7 +115,7 @@ QScriptValue Parser::parseNumber(QString &str, uint &beg)
     return parseError(str, beg);
 }
 
-QScriptValue Parser::parseString(QString &str, uint &beg)
+QScriptValue parseString(QString &str, uint &beg)
 {
     uint size = 1;
     QCharRef begSymbol = str[beg];
@@ -136,7 +132,7 @@ QScriptValue Parser::parseString(QString &str, uint &beg)
     return parseError(str, beg);
 }
 
-QScriptValue Parser::parseArray(QString &str, uint &beg)
+QScriptValue parseArray(QString &str, uint &beg)
 {
     QScriptValue result = engine->newArray();
     skipWhitespaces(str, beg);
@@ -148,13 +144,13 @@ QScriptValue Parser::parseArray(QString &str, uint &beg)
         }
         ++beg;
         skipWhitespaces(str, beg);
-        result.setProperty(index++, (this->*parser[typeOf(str, beg)])(str, beg));
+        result.setProperty(index++, parser[typeOf(str, beg)](str, beg));
         skipWhitespaces(str, beg);
     }
     return parseError(str, beg);
 }
 
-QScriptValue Parser::parseObject(QString &str, uint &beg)
+QScriptValue parseObject(QString &str, uint &beg)
 {
     QScriptValue result = engine->newObject();
     skipWhitespaces(str, beg);
@@ -167,23 +163,23 @@ QScriptValue Parser::parseObject(QString &str, uint &beg)
             skipWhitespaces(str, beg);
         }
         QString token = getTokenName(str, beg);
-        result.setProperty(token, (this->*parser[typeOf(str, beg)])(str, beg));
+        result.setProperty(token, parser[typeOf(str, beg)](str, beg));
         skipWhitespaces(str, beg);
     }
     return result;
 }
 
-QScriptValue Parser::parseError(QString &str, uint &beg)
+QScriptValue parseError(QString &str, uint &beg)
 {
 
 }
 
-QScriptValue Parser::parseFunction(QString &str, uint &beg)
+QScriptValue parseFunction(QString &str, uint &beg)
 {
 
 }
 
-Parser::Type Parser::typeOf(QString &str, uint &beg)
+Type typeOf(QString &str, uint &beg)
 {
     skipWhitespaces(str, beg);
     if (str[beg] == ',' || str[beg] == ']' || str[beg] == 'u')
@@ -205,11 +201,11 @@ Parser::Type Parser::typeOf(QString &str, uint &beg)
     return ERROR;
 }
 
-void Parser::skipWhitespaces(QString& str, uint &beg){
+void skipWhitespaces(QString& str, uint &beg){
     while (str[beg].isSpace()) { ++beg; }
 }
 
-QString Parser::getTokenName(QString &str, uint &beg)
+QString getTokenName(QString &str, uint &beg)
 {
     skipWhitespaces(str, beg);
     uint size = 0;
@@ -221,7 +217,7 @@ QString Parser::getTokenName(QString &str, uint &beg)
     return QString(str.mid(tmp, size));
 }
 
-QString Parser::stringifyObj(QScriptValue obj)
+QString stringifyObj(QScriptValue obj)
 {
     QString str;
     QScriptValueIterator current(obj);
@@ -238,7 +234,7 @@ QString Parser::stringifyObj(QScriptValue obj)
     return str;
 }
 
-QString Parser::stringifyArr(QScriptValue obj)
+QString stringifyArr(QScriptValue obj)
 {
     QString str;
     str = "[";
@@ -255,7 +251,7 @@ QString Parser::stringifyArr(QScriptValue obj)
     str += "]";
     return str;
 }
-void Parser::postprocess(QScriptValue value)
+void postprocess(QScriptValue value)
 {
     if (value.isObject()){
         QScriptValueIterator current(value);
@@ -270,4 +266,7 @@ void Parser::postprocess(QScriptValue value)
             }
         }
     }
+}
+
+}
 }
