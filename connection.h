@@ -14,7 +14,7 @@ class Connection: public QObject
 public:
     typedef std::function<void(QScriptValue)> handler;
 
-    static const QString TERMINATOR;
+    static const QByteArray TERMINATOR;
 
     Connection(QString address, quint16 port);
 

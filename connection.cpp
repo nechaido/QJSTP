@@ -3,7 +3,7 @@
 namespace QJSTP
 {
 
-const QString Connection::TERMINATOR = "\0";
+const QByteArray Connection::TERMINATOR = QByteArray::fromRawData("\0", 1);
 
 const QString Connection::HANDSHAKE = "handshake";
 const QString Connection::CALL = "call";
