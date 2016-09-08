@@ -9,7 +9,7 @@ Connection::Connection(QString address, quint16 port)
     : address(address), port(port)
 {
     socket = new QTcpSocket(this);
-    callbacks = new QHash<quint64, function>();
+    callbacks = new QHash<quint64, handler>();
     connect(socket, SIGNAL(connected()), this, SLOT(onConnected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(onData()));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)()), this, SLOT(onConnected()));
@@ -17,7 +17,7 @@ Connection::Connection(QString address, quint16 port)
 
 }
 
-void Connection::call(QString interface, QString method, QScriptValue parameters, function callback)
+void Connection::call(QString interface, QString method, QScriptValue parameters, handler callback)
 {
 
 }
@@ -27,17 +27,17 @@ void Connection::callback(quint64 id, QScriptValue parameters)
 
 }
 
-void Connection::event(QString interface, QString method, QScriptValue parameters, QVector <function> callbacks)
+void Connection::event(QString interface, QString method, QScriptValue parameters, QVector <handler> callbacks)
 {
 
 }
 
-void Connection::handshake(QString name, QScriptValue parameters, function callback)
+void Connection::handshake(QString name, QScriptValue parameters, handler callback)
 {
 
 }
 
-void Connection::inspect(QString interface, function callback)
+void Connection::inspect(QString interface, handler callback)
 {
 
 }
