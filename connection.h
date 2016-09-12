@@ -6,19 +6,24 @@
 
 #include "parser.h"
 
+
 namespace QJSTP
 {
 
 class Connection: public QObject
 {
+    Q_OBJECT
+
 public:
     typedef std::function<void(QScriptValue)> handler;
+
+    QTcpSocket *socket;
 
     static const QByteArray TERMINATOR;
 
     Connection(QString address, quint16 port);
 
-    void handshake(QString name, QScriptValue parameters, handler callback);
+    void handshake(QString name, QScriptValue parameters, handler callback = NULL);
     void call(QString interface, QString method, QScriptValue parameters, handler callback);
     void callback(quint64 id, QScriptValue parameters);
     void event(QString interface, QString method, QScriptValue parameters, QList <handler> callbacks);
@@ -29,7 +34,8 @@ public:
     //    void health();
 
 private:
-    QTcpSocket *socket;
+
+    QByteArray buffer;
 
     QString sessionId;
     quint64 packageId;
@@ -37,7 +43,7 @@ private:
     QString address;
     qint16 port;
 
-    QHash <quint64, handler> *callbacks;
+    QHash <quint64, QList<handler>> callbacks;
 
     static const QString HANDSHAKE;
     static const QString CALL;
@@ -48,6 +54,12 @@ private:
 //    static const QString STATE;
 //    static const QString STREAM;
 //    static const QString HEALTH;
+
+    void onHandshake(QScriptValue parameters);
+    void onCall(QScriptValue parameters);
+    void onCallback(QScriptValue parameters);
+    void onEvent(QScriptValue parameters);
+    void onInspect(QScriptValue parameters);
 
 
 private slots :

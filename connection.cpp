@@ -1,5 +1,7 @@
 #include "connection.h"
 
+#include <QScriptValueIterator>
+
 namespace QJSTP
 {
 
@@ -22,13 +24,12 @@ QByteArray getMessage(QString type, quint64 id, QString name, QScriptValue param
 QByteArray getMessage(QString type, quint64 id, QString interface, QString method);
 
 Connection::Connection(QString address, quint16 port)
-    : address(address), port(port)
+    : address(address), port(port), callbacks()
 {
     socket = new QTcpSocket(this);
-    callbacks = new QHash<quint64, handler>();
     connect(socket, SIGNAL(connected()), this, SLOT(onConnected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(onData()));
-    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)()), this, SLOT(onConnected()));
+//    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)()), this, SLOT(onError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(disconnected()), this, SLOT(onDisconnected()));
 
 }
@@ -59,12 +60,83 @@ void Connection::handshake(QString name, QScriptValue parameters, handler callba
             message = getMessage(HANDSHAKE, packageId, name, parameters);
         }
         socket->write(message);
-        callbacks->insert(packageId, callback);
+        callbacks.insert(packageId, { callback });
         packageId++;
     }
 }
 
 void Connection::inspect(QString interface, handler callback)
+{
+
+}
+
+void Connection::onHandshake(QScriptValue parameters)
+{
+
+}
+
+void Connection::onCall(QScriptValue parameters)
+{
+
+}
+
+void Connection::onCallback(QScriptValue parameters)
+{
+
+}
+
+void Connection::onEvent(QScriptValue parameters)
+{
+
+}
+
+void Connection::onInspect(QScriptValue parameters)
+{
+
+}
+
+void Connection::onConnected()
+{
+
+}
+
+void Connection::onData()
+{
+    buffer.append(socket->readAll());
+    int index = -1;
+    while((index = buffer.indexOf(TERMINATOR)) > 0) {
+        QByteArray message = buffer.mid(0, index);
+        buffer.remove(0, index);
+        QScriptValue package = Parser::parse(message);
+        QString packageType;
+        if (package.property(HANDSHAKE).isValid()) {
+            onHandshake(package);
+            packageType = HANDSHAKE;
+        } else if (package.property(CALL).isValid()) {
+            onCall(package);
+            packageType = CALL;
+        } else if (package.property(CALL_BACK).isValid()) {
+            onCallback(package);
+            packageType = CALL_BACK;
+        } else if (package.property(EVENT).isValid()) {
+            onEvent(package);
+            packageType = EVENT;
+        } else if (package.property(INSPECT).isValid()) {
+            onInspect(package);
+            packageType = INSPECT;
+        }
+        for (auto func : callbacks.value(package.property(packageType).property(0).toInt32())) {
+            func(package);
+        }
+    }
+}
+
+void Connection::onDisconnected()
+{
+
+}
+
+void Connection::onError(QAbstractSocket::SocketError socketError)
 {
 
 }
