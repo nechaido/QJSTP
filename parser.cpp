@@ -108,15 +108,12 @@ QScriptValue parseNumber(QString &str, uint &beg)
     while (!str[beg + size].isSpace() && size < str.length() - beg && str[beg + size] != ',') {
         if (str[beg + size].isNumber()) {
             ++size;
-            continue;
-        }
-        if (str[beg + size] == '.' && isIntPart) {
+        } else if (str[beg + size] == '.' && isIntPart) {
             isIntPart = false;
             ++size;
-            continue;
+        } else {
+            break;
         }
-        size = -1;
-        break;
     }
     if (size > 0) {
         beg += size;
