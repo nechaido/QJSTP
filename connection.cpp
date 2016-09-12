@@ -24,14 +24,14 @@ QByteArray getMessage(QString type, quint64 id, QString name, QScriptValue param
 QByteArray getMessage(QString type, quint64 id, QString interface, QString method);
 
 Connection::Connection(QString address, quint16 port)
-    : address(address), port(port), callbacks()
+    : callbacks(), socket(this)
 {
-    socket = new QTcpSocket(this);
     connect(socket, SIGNAL(connected()), this, SLOT(onConnected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(onData()));
 //    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)()), this, SLOT(onError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(disconnected()), this, SLOT(onDisconnected()));
 
+    socket->connectToHost(address, port);
 }
 
 void Connection::call(QString interface, QString method, QScriptValue parameters, handler callback)
@@ -51,18 +51,15 @@ void Connection::event(QString interface, QString method, QScriptValue parameter
 
 void Connection::handshake(QString name, QScriptValue parameters, handler callback)
 {
-    socket->connectToHost(address, port);
-    if (socket->waitForConnected()) {
-        QByteArray message;
-        if (parameters.isNull() || parameters.isUndefined()) {
-             message = getMessage(HANDSHAKE, packageId, name);
-        } else {
-            message = getMessage(HANDSHAKE, packageId, name, parameters);
-        }
-        socket->write(message);
-        callbacks.insert(packageId, { callback });
-        packageId++;
+    QByteArray message;
+    if (parameters.isNull() || parameters.isUndefined()) {
+         message = getMessage(HANDSHAKE, packageId, name);
+    } else {
+        message = getMessage(HANDSHAKE, packageId, name, parameters);
     }
+    socket->write(message);
+    callbacks.insert(packageId, { callback });
+    packageId++;
 }
 
 void Connection::inspect(QString interface, handler callback)

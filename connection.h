@@ -40,9 +40,6 @@ private:
     QString sessionId;
     quint64 packageId;
 
-    QString address;
-    qint16 port;
-
     QHash <quint64, QList<handler>> callbacks;
 
     static const QString HANDSHAKE;
