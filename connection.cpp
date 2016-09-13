@@ -110,7 +110,7 @@ void Connection::onData()
     int index = -1;
     while((index = buffer.indexOf(TERMINATOR)) > 0) {
         QByteArray message = buffer.mid(0, index);
-        buffer.remove(0, index);
+        buffer.remove(0, index + 1);
         QScriptValue package = Parser::parse(message);
         QString packageType;
         if (package.property(HANDSHAKE).isValid()) {
