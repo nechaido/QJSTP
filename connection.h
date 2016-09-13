@@ -1,7 +1,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include <QTcpSocket>
+#include <QAbstractSocket>
 #include <functional>
 
 #include "parser.h"
@@ -17,11 +17,9 @@ class Connection: public QObject
 public:
     typedef std::function<void(QScriptValue)> handler;
 
-    QTcpSocket *socket;
-
     static const QByteArray TERMINATOR;
 
-    Connection(QString address, quint16 port);
+    Connection(QString address, quint16 port, bool useSSL = false);
 
     void handshake(QString name, QScriptValue parameters, handler callback = NULL);
     void call(QString interface, QString method, QScriptValue parameters, handler callback);
@@ -34,6 +32,8 @@ public:
     //    void health();
 
 private:
+
+    QAbstractSocket *socket;
 
     QByteArray buffer;
 
