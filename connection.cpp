@@ -75,7 +75,9 @@ void Connection::inspect(QString interface, handler callback)
 
 void Connection::onHandshake(QScriptValue parameters)
 {
-
+    if(parameters.property("ok").isValid()) {
+        sessionId = parameters.property("ok").toString();
+    }
 }
 
 void Connection::onCall(QScriptValue parameters)
