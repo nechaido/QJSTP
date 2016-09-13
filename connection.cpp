@@ -63,7 +63,10 @@ void Connection::handshake(QString name, QScriptValue parameters, handler callba
     } else {
         message = getMessage(HANDSHAKE, packageId, name, parameters);
     }
-    socket->write(message);
+    callbacks.insert(packageId, {
+                         std::bind(&Connection::onHandshake, this, std::placeholders::_1),
+                         callback
+                     });
     callbacks.insert(packageId, { callback });
     packageId++;
 }
@@ -116,19 +119,14 @@ void Connection::onData()
         QScriptValue package = Parser::parse(message);
         QString packageType;
         if (package.property(HANDSHAKE).isValid()) {
-            onHandshake(package);
             packageType = HANDSHAKE;
         } else if (package.property(CALL).isValid()) {
-            onCall(package);
             packageType = CALL;
         } else if (package.property(CALL_BACK).isValid()) {
-            onCallback(package);
             packageType = CALL_BACK;
         } else if (package.property(EVENT).isValid()) {
-            onEvent(package);
             packageType = EVENT;
         } else if (package.property(INSPECT).isValid()) {
-            onInspect(package);
             packageType = INSPECT;
         }
         for (auto func : callbacks.value(package.property(packageType).property(0).toInt32())) {
