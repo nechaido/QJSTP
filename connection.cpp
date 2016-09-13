@@ -1,5 +1,6 @@
 #include "connection.h"
 
+#include <QSslSocket>
 #include <QScriptValueIterator>
 
 namespace QJSTP
@@ -23,9 +24,14 @@ QByteArray getMessage(QString type, quint64 id, QScriptValue parameters);
 QByteArray getMessage(QString type, quint64 id, QString name, QScriptValue parameters);
 QByteArray getMessage(QString type, quint64 id, QString interface, QString method);
 
-Connection::Connection(QString address, quint16 port)
-    : callbacks(), socket(this)
+Connection::Connection(QString address, quint16 port, bool useSSL)
+    : callbacks()
 {
+    if (useSSL) {
+        socket = new QSslSocket(this);
+    } else {
+        socket = new QTcpSocket(this);
+    }
     connect(socket, SIGNAL(connected()), this, SLOT(onConnected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(onData()));
 //    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)()), this, SLOT(onError(QAbstractSocket::SocketError)));
