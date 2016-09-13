@@ -106,6 +106,7 @@ void Connection::onConnected()
 void Connection::onData()
 {
     buffer.append(socket->readAll());
+    socket->flush();
     int index = -1;
     while((index = buffer.indexOf(TERMINATOR)) > 0) {
         QByteArray message = buffer.mid(0, index);
