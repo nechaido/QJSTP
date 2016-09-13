@@ -31,9 +31,11 @@ public:
     //    void stream();
     //    void health();
 
+    QAbstractSocket *socket;
+
 private:
 
-    QAbstractSocket *socket;
+
 
     QByteArray buffer;
 
@@ -41,6 +43,8 @@ private:
     quint64 packageId;
 
     QHash <quint64, QList<handler>> callbacks;
+
+    QHash<QString, QVector<QString>> serverMethods;
 
     static const QString HANDSHAKE;
     static const QString CALL;
@@ -56,7 +60,7 @@ private:
     void onCall(QScriptValue parameters);
     void onCallback(QScriptValue parameters);
     void onEvent(QScriptValue parameters);
-    void onInspect(QScriptValue parameters);
+    void onInspect(QString interface, QScriptValue parameters);
 
 
 private slots :

@@ -25,7 +25,7 @@ QByteArray getMessage(QString type, quint64 id, QString name, QScriptValue param
 QByteArray getMessage(QString type, quint64 id, QString interface, QString method);
 
 Connection::Connection(QString address, quint16 port, bool useSSL)
-    : callbacks()
+    : callbacks(), serverMethods()
 {
     if (useSSL) {
         socket = new QSslSocket(this);
@@ -63,17 +63,22 @@ void Connection::handshake(QString name, QScriptValue parameters, handler callba
     } else {
         message = getMessage(HANDSHAKE, packageId, name, parameters);
     }
+    socket->write(message);
     callbacks.insert(packageId, {
                          std::bind(&Connection::onHandshake, this, std::placeholders::_1),
                          callback
                      });
-    callbacks.insert(packageId, { callback });
     packageId++;
 }
 
 void Connection::inspect(QString interface, handler callback)
 {
-
+    socket->write(getMessage(INSPECT, packageId, interface));
+    callbacks.insert(packageId, {
+                         std::bind(&Connection::onInspect, this, interface, std::placeholders::_1),
+                         callback
+                     });
+    packageId++;
 }
 
 void Connection::onHandshake(QScriptValue parameters)
@@ -98,9 +103,17 @@ void Connection::onEvent(QScriptValue parameters)
 
 }
 
-void Connection::onInspect(QScriptValue parameters)
+void Connection::onInspect(QString interface, QScriptValue parameters)
 {
-
+    QVector<QString> methods;
+    if (parameters.property("ok").isValid()) {
+        QScriptValueIterator current(parameters.property("ok"));
+        while (current.hasNext()) {
+            current.next();
+            methods.append(current.value().toString());
+        }
+        serverMethods.insert(interface, methods);
+    }
 }
 
 void Connection::onConnected()
