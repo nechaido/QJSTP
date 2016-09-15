@@ -22,7 +22,7 @@ QByteArray getMessage(QString type, quint64 id);
 QByteArray getMessage(QString type, quint64 id, QString name);
 QByteArray getMessage(QString type, quint64 id, QScriptValue parameters);
 QByteArray getMessage(QString type, quint64 id, QString name, QScriptValue parameters);
-QByteArray getMessage(QString type, quint64 id, QString interface, QString method);
+QByteArray getMessage(QString type, quint64 id, QString interface, QString method, QScriptValue parameters);
 
 Connection::Connection(QString address, quint16 port, bool useSSL)
     : callbacks(), serverMethods()
@@ -42,7 +42,10 @@ Connection::Connection(QString address, quint16 port, bool useSSL)
 
 void Connection::call(QString interface, QString method, QScriptValue parameters, handler callback)
 {
-
+   QByteArray message = getMessage(CALL, packageId, interface, method, parameters);
+   socket->write(message);
+   callbacks.insert(packageId, { callback });
+   packageId++;
 }
 
 void Connection::callback(quint64 id, QScriptValue parameters)
@@ -65,7 +68,7 @@ void Connection::handshake(QString name, QScriptValue parameters, handler callba
     }
     socket->write(message);
     callbacks.insert(packageId, {
-                         std::bind(&Connection::onHandshake, this, std::placeholders::_1),
+                         std::bind(&Connection::onHandshakeReturn, this, std::placeholders::_1),
                          callback
                      });
     packageId++;
@@ -75,25 +78,43 @@ void Connection::inspect(QString interface, handler callback)
 {
     socket->write(getMessage(INSPECT, packageId, interface));
     callbacks.insert(packageId, {
-                         std::bind(&Connection::onInspect, this, interface, std::placeholders::_1),
+                         std::bind(&Connection::onInspectReturn, this, interface, std::placeholders::_1),
                          callback
                      });
     packageId++;
 }
 
-void Connection::onHandshake(QScriptValue parameters)
+const QList<QString> Connection::getInterfaces()
+{
+    return serverMethods.keys();
+}
+
+const QList<QString> Connection::getMethods(QString interface)
+{
+    return serverMethods.value(interface);
+}
+
+void Connection::onHandshakeReturn(QScriptValue parameters)
 {
     if(parameters.property("ok").isValid()) {
         sessionId = parameters.property("ok").toString();
     }
 }
 
-void Connection::onCall(QScriptValue parameters)
+void Connection::onInspectReturn(QString interface, QScriptValue parameters)
 {
-
+    QList<QString> methods;
+    if (parameters.property("ok").isValid()) {
+        QScriptValueIterator current(parameters.property("ok"));
+        while (current.hasNext()) {
+            current.next();
+            methods.append(current.value().toString());
+        }
+        serverMethods.insert(interface, methods);
+    }
 }
 
-void Connection::onCallback(QScriptValue parameters)
+void Connection::onCall(QScriptValue parameters)
 {
 
 }
@@ -103,17 +124,9 @@ void Connection::onEvent(QScriptValue parameters)
 
 }
 
-void Connection::onInspect(QString interface, QScriptValue parameters)
+void Connection::onInspect(QScriptValue parameters)
 {
-    QVector<QString> methods;
-    if (parameters.property("ok").isValid()) {
-        QScriptValueIterator current(parameters.property("ok"));
-        while (current.hasNext()) {
-            current.next();
-            methods.append(current.value().toString());
-        }
-        serverMethods.insert(interface, methods);
-    }
+
 }
 
 void Connection::onConnected()
@@ -160,28 +173,35 @@ void Connection::onError(QAbstractSocket::SocketError socketError)
 
 QByteArray getMessage(QString type, quint64 id)
 {
-    QByteArray message = "{" + type.toUtf8() + ":[" + QString::number(id).toUtf8() + "]}" + Connection::TERMINATOR;
-    return message;
+    return "{" + type.toUtf8() + ":[" + QString::number(id).toUtf8() + "]}"
+            + Connection::TERMINATOR;
 }
 
 QByteArray getMessage(QString type, quint64 id, QString name)
 {
-    return QByteArray("{" + type.toUtf8() + ":[" + QString::number(id).toUtf8() + ",'" + name.toUtf8() + "']}" + Connection::TERMINATOR);
+    return QByteArray("{" + type.toUtf8() + ":[" + QString::number(id).toUtf8()
+                      + ",'" + name.toUtf8() + "']}" + Connection::TERMINATOR);
 }
 
 QByteArray getMessage(QString type, quint64 id, QString name, QScriptValue parameters)
 {
-    return QByteArray("{" + type.toUtf8() + ":[" + QString::number(id).toUtf8() + ",'" + name.toUtf8() + "'],"
-            + Parser::stringify(parameters).toUtf8() + "}" + Connection::TERMINATOR);
+    return QByteArray("{" + type.toUtf8() + ":[" + QString::number(id).toUtf8()
+                      + ",'" + name.toUtf8() + "'],"
+                      + Parser::stringify(parameters).toUtf8() + "}"
+                      + Connection::TERMINATOR);
 }
 
 QByteArray getMessage(QString type, quint64 id, QScriptValue parameters) {
 
 }
 
-QByteArray getMessage(QString type, quint64 id, QString interface, QString method)
+QByteArray getMessage(QString type, quint64 id, QString interface, QString method, QScriptValue parameters)
 {
-
+    QByteArray args = Parser::stringify(parameters).toUtf8();
+    return QByteArray("{" + type.toUtf8() + ":[" + QString::number(id).toUtf8()
+                      + ",'" + interface.toUtf8() + "']," + method.toUtf8()
+                      + ":" + args + "}"
+                      + Connection::TERMINATOR);
 }
 
 }

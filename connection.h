@@ -27,6 +27,9 @@ public:
     void event(QString interface, QString method, QScriptValue parameters, QList <handler> callbacks);
     void inspect(QString interface, handler callback);
 
+    const QList<QString> getInterfaces();
+    const QList<QString> getMethods(QString interface);
+
     //    void state();
     //    void stream();
     //    void health();
@@ -44,7 +47,7 @@ private:
 
     QHash <quint64, QList<handler>> callbacks;
 
-    QHash<QString, QVector<QString>> serverMethods;
+    QHash<QString, QList<QString>> serverMethods;
 
     static const QString HANDSHAKE;
     static const QString CALL;
@@ -56,12 +59,13 @@ private:
 //    static const QString STREAM;
 //    static const QString HEALTH;
 
-    void onHandshake(QScriptValue parameters);
+    void onHandshakeReturn(QScriptValue parameters);
+    void onInspectReturn(QString interface, QScriptValue parameters);
+
     void onCall(QScriptValue parameters);
     void onCallback(QScriptValue parameters);
     void onEvent(QScriptValue parameters);
-    void onInspect(QString interface, QScriptValue parameters);
-
+    void onInspect(QScriptValue parameters);
 
 private slots :
     void onConnected();
