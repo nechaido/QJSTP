@@ -147,15 +147,21 @@ QScriptValue parseArray(QString &str, uint &beg)
     QScriptValue result = engine->newArray();
     skipWhitespaces(str, beg);
     quint32 index = 0;
-    while (beg < str.length()) {
-        if (str[beg] == ']') {
-            ++beg;
-            return result;
-        }
+    ++beg;
+    skipWhitespaces(str, beg);
+    if (str[beg] == ']') {
         ++beg;
+        return result;
+    }
+    while (beg < str.length()) {
         skipWhitespaces(str, beg);
         result.setProperty(index++, parser[typeOf(str, beg)](str, beg));
         skipWhitespaces(str, beg);
+        if (str[beg] == ']') {
+            ++beg;
+            return result;
+        };
+        ++beg;
     }
     return parseError(str, beg);
 }
@@ -163,19 +169,22 @@ QScriptValue parseArray(QString &str, uint &beg)
 QScriptValue parseObject(QString &str, uint &beg)
 {
     QScriptValue result = engine->newObject();
+    ++beg;
     skipWhitespaces(str, beg);
+    if (str[beg] == '}') {
+        ++beg;
+        return result;
+    }
     while (beg < str.length()) {
+        skipWhitespaces(str, beg);
+        QString token = getTokenName(str, beg);
+        result.setProperty(token, parser[typeOf(str, beg)](str, beg));
+        skipWhitespaces(str, beg);
         if (str[beg] == '}') {
             ++beg;
             return result;
         }
-        else {
-            ++beg;
-            skipWhitespaces(str, beg);
-        }
-        QString token = getTokenName(str, beg);
-        result.setProperty(token, parser[typeOf(str, beg)](str, beg));
-        skipWhitespaces(str, beg);
+        ++beg;
     }
     return result;
 }
