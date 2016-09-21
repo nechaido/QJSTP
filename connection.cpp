@@ -42,15 +42,12 @@ Connection::Connection(QString address, quint16 port, bool useSSL)
 
 void Connection::call(QString interface, QString method, QScriptValue parameters, handler callback)
 {
-   QByteArray message = getMessage(CALL, packageId, interface, method, parameters);
-   socket->write(message);
-   callbacks.insert(packageId, { callback });
-   packageId++;
-}
-
-void Connection::callback(quint64 id, QScriptValue parameters)
-{
-
+    QByteArray message = getMessage(CALL, packageId, interface, method, parameters);
+    socket->write(message);
+    if (callback != NULL) {
+        callbacks.insert(packageId, { callback });
+    }
+    packageId++;
 }
 
 void Connection::event(QString interface, QString method, QScriptValue parameters, QList <handler> callbacks)
@@ -58,29 +55,40 @@ void Connection::event(QString interface, QString method, QScriptValue parameter
 
 }
 
+void Connection::handshake(QString name, Connection::handler callback)
+{
+    QByteArray message;
+    message = getMessage(HANDSHAKE, packageId, name);
+    socket->write(message);
+    QList<handler> packageCallbacks = { std::bind(&Connection::onHandshakeReturn, this, std::placeholders::_1) };
+    if (callback != NULL) {
+        packageCallbacks.append(callback);
+    }
+    callbacks.insert(packageId, { packageCallbacks });
+    packageId++;
+}
+
 void Connection::handshake(QString name, QScriptValue parameters, handler callback)
 {
     QByteArray message;
-    if (parameters.isNull() || parameters.isUndefined()) {
-         message = getMessage(HANDSHAKE, packageId, name);
-    } else {
-        message = getMessage(HANDSHAKE, packageId, name, parameters);
-    }
+    message = getMessage(HANDSHAKE, packageId, name, parameters);
     socket->write(message);
-    callbacks.insert(packageId, {
-                         std::bind(&Connection::onHandshakeReturn, this, std::placeholders::_1),
-                         callback
-                     });
+    QList<handler> packageCallbacks = { std::bind(&Connection::onHandshakeReturn, this, std::placeholders::_1) };
+    if (callback != NULL) {
+        packageCallbacks.append(callback);
+    }
+    callbacks.insert(packageId, { packageCallbacks });
     packageId++;
 }
 
 void Connection::inspect(QString interface, handler callback)
 {
     socket->write(getMessage(INSPECT, packageId, interface));
-    callbacks.insert(packageId, {
-                         std::bind(&Connection::onInspectReturn, this, interface, std::placeholders::_1),
-                         callback
-                     });
+    QList<handler> packageCallbacks = { std::bind(&Connection::onInspectReturn, this, interface, std::placeholders::_1) };
+    if (callback != NULL) {
+        packageCallbacks.append(callback);
+    }
+    callbacks.insert(packageId, { packageCallbacks });
     packageId++;
 }
 

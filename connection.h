@@ -21,11 +21,11 @@ public:
 
     Connection(QString address, quint16 port, bool useSSL = false);
 
+    void call(QString interface, QString method, QScriptValue parameters, handler callback = NULL);
+    void event(QString interface, QString method, QScriptValue parameters, QList<handler> callbacks = {});
+    void handshake(QString name, handler callback = NULL);
     void handshake(QString name, QScriptValue parameters, handler callback = NULL);
-    void call(QString interface, QString method, QScriptValue parameters, handler callback);
-    void callback(quint64 id, QScriptValue parameters);
-    void event(QString interface, QString method, QScriptValue parameters, QList <handler> callbacks);
-    void inspect(QString interface, handler callback);
+    void inspect(QString interface, handler callback = NULL);
 
     const QList<QString> getInterfaces();
     const QList<QString> getMethods(QString interface);
