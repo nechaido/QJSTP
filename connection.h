@@ -19,7 +19,9 @@ public:
 
     static const QByteArray TERMINATOR;
 
-    Connection(QString address, quint16 port, bool useSSL = false);
+    Connection(const QString &address, quint16 port, bool useSSL = false);
+    Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, handler>>> methods, bool useSSL = false);
+    Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, handler>>> methods, QAbstractSocket *transport);
 
     void call(QString interface, QString method, QScriptValue parameters, handler callback = NULL);
     void event(QString interface, QString method, QScriptValue parameters, QList<handler> callbacks = {});
@@ -30,6 +32,8 @@ public:
     const QList<QString> getInterfaces();
     const QList<QString> getMethods(QString interface);
 
+    void addMethod(QString interface, QString methodName, handler method);
+
     //    void state();
     //    void stream();
     //    void health();
@@ -37,8 +41,6 @@ public:
     QAbstractSocket *socket;
 
 private:
-
-
 
     QByteArray buffer;
 
@@ -48,6 +50,7 @@ private:
     QHash <quint64, QList<handler>> callbacks;
 
     QHash<QString, QList<QString>> serverMethods;
+    QHash<QString, QList<QPair<QString, handler>>> methods;
 
     static const QString HANDSHAKE;
     static const QString CALL;

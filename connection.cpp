@@ -24,14 +24,24 @@ QByteArray getMessage(QString type, quint64 id, QScriptValue parameters);
 QByteArray getMessage(QString type, quint64 id, QString name, QScriptValue parameters);
 QByteArray getMessage(QString type, quint64 id, QString interface, QString method, QScriptValue parameters);
 
-Connection::Connection(QString address, quint16 port, bool useSSL)
-    : callbacks(), serverMethods()
+QByteArray getInspectMessage(quint64 id, const QList<QPair<QString, Connection::handler>> &methods);
+QByteArray getInspectError(quint64 id);
+
+Connection::Connection(const QString &address, quint16 port, bool useSSL) :
+    Connection(address, port, QHash<QString, QList<QPair<QString, Connection::handler>>>(), useSSL)
 {
-    if (useSSL) {
-        socket = new QSslSocket(this);
-    } else {
-        socket = new QTcpSocket(this);
-    }
+
+}
+
+Connection::Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, Connection::handler>>> methods, bool useSSL) :
+    Connection(address, port, methods, useSSL ? new QSslSocket() : new QTcpSocket)
+{
+
+}
+
+Connection::Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, Connection::handler>>> methods, QAbstractSocket *transport) :
+    buffer(), callbacks(), methods(methods), packageId(), serverMethods(), sessionId(), socket(transport)
+{
     connect(socket, SIGNAL(connected()), this, SLOT(onConnected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(onData()));
 //    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)()), this, SLOT(onError(QAbstractSocket::SocketError)));
@@ -102,6 +112,22 @@ const QList<QString> Connection::getMethods(QString interface)
     return serverMethods.value(interface);
 }
 
+void Connection::addMethod(QString interface, QString methodName, Connection::handler method)
+{
+    if (methods.contains(interface)) {
+        for (auto pair : methods[interface]) {
+            if (pair.first == methodName) {
+                pair.second = method;
+                return;
+            }
+        }
+        methods[interface].append(qMakePair(methodName, method));
+    } else {
+        methods.insert(interface, {{methodName, method}});
+    }
+
+}
+
 void Connection::onHandshakeReturn(QScriptValue parameters)
 {
     if(parameters.property("ok").isValid()) {
@@ -134,7 +160,14 @@ void Connection::onEvent(QScriptValue parameters)
 
 void Connection::onInspect(QScriptValue parameters)
 {
-
+    QString interface = parameters.property("inspect").property(1).toString();
+    QByteArray message;
+    if (methods.contains(interface)) {
+        message = getInspectMessage(parameters.property("inspect").property(0).toInt32(), methods[interface]);
+    } else {
+        message = getInspectError(parameters.property("inspect").property(0).toInt32());
+    }
+    socket->write(message);
 }
 
 void Connection::onConnected()
@@ -210,6 +243,20 @@ QByteArray getMessage(QString type, quint64 id, QString interface, QString metho
                       + ",'" + interface.toUtf8() + "']," + method.toUtf8()
                       + ":" + args + "}"
                       + Connection::TERMINATOR);
+}
+
+QByteArray getInspectMessage(quint64 id, const QList<QPair<QString, Connection::handler>> &methods) {
+    QByteArray message = "ok:[";
+    for (auto pair : methods) {
+        message += pair.first.toUtf8();
+        message += ',';
+    }
+    message.replace(message.length() - 1, 1, "]");
+    return QByteArray("{callback:[" + QString::number(id).toUtf8() + "]," + message + "}" + Connection::TERMINATOR);
+}
+
+QByteArray getInspectError(quint64 id) {
+    return QByteArray("{callback:[" + QString::number(id).toUtf8() + "],error:[12,'Interface not found']}" + Connection::TERMINATOR);
 }
 
 }
