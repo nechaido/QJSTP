@@ -16,12 +16,13 @@ class Connection: public QObject
 
 public:
     typedef std::function<void(QScriptValue)> handler;
+    typedef std::function<QScriptValue(QScriptValue)> method;
 
     static const QByteArray TERMINATOR;
 
     Connection(const QString &address, quint16 port, bool useSSL = false);
-    Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, handler>>> methods, bool useSSL = false);
-    Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, handler>>> methods, QAbstractSocket *transport);
+    Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, method>>> methods, bool useSSL = false);
+    Connection(const QString &address, quint16 port, QHash<QString, QList<QPair<QString, method>>> methods, QAbstractSocket *transport);
 
     void call(QString interface, QString method, QScriptValue parameters, handler callback = NULL);
     void event(QString interface, QString method, QScriptValue parameters, QList<handler> callbacks = {});
@@ -32,7 +33,7 @@ public:
     const QList<QString> getInterfaces();
     const QList<QString> getMethods(QString interface);
 
-    void addMethod(QString interface, QString methodName, handler method);
+    void addMethod(QString interface, QString methodName, method func);
 
     //    void state();
     //    void stream();
@@ -50,7 +51,7 @@ private:
     QHash <quint64, QList<handler>> callbacks;
 
     QHash<QString, QList<QString>> serverMethods;
-    QHash<QString, QList<QPair<QString, handler>>> methods;
+    QHash<QString, QList<QPair<QString, method>>> methods;
 
     static const QString HANDSHAKE;
     static const QString CALL;
