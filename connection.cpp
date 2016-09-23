@@ -189,12 +189,15 @@ void Connection::onData()
             packageType = HANDSHAKE;
         } else if (package.property(CALL).isValid()) {
             packageType = CALL;
+            onCall(package);
         } else if (package.property(CALL_BACK).isValid()) {
             packageType = CALL_BACK;
         } else if (package.property(EVENT).isValid()) {
             packageType = EVENT;
+            onEvent(package);
         } else if (package.property(INSPECT).isValid()) {
             packageType = INSPECT;
+            onInspect(package);
         }
         for (auto func : callbacks.value(package.property(packageType).property(0).toInt32())) {
             func(package);

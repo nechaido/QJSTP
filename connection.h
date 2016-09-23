@@ -66,7 +66,6 @@ private:
     void onInspectReturn(QString interface, QScriptValue parameters);
 
     void onCall(QScriptValue parameters);
-    void onCallback(QScriptValue parameters);
     void onEvent(QScriptValue parameters);
     void onInspect(QScriptValue parameters);
 
